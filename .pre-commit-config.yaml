@@ -1,0 +1,26 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.(min\.css|min\.js|po|mo|pem|yaml|yml)$
+      - id: end-of-file-fixer
+        exclude: \.(min\.css|min\.js|po|mo|pem|yaml|yml)$
+      - id: requirements-txt-fixer
+        exclude: \.(min\.css|min\.js|po|mo|pem|yaml|yml)$
+  - repo: https://github.com/psf/black
+    rev: 22.6.0
+    hooks:
+      - id: black
+        args: ["--line-length=100"]
+  - repo: https://github.com/PyCQA/isort
+    rev: "5.12.0"
+    hooks:
+      - id: isort
+        args: ["--sl", "-l 100", "--profile", "black"]
+  - repo: https://github.com/pycqa/flake8
+    rev: "5.0.4"
+    hooks:
+      - id: flake8
+        args: ["--max-line-length=100", "--ignore=E203,F403,F405"]
+        exclude: ^(infrastructure/alembic/|app/adapters/models/__init__.py)
