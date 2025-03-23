@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'API Gateway and Lambda functions for FIAP Tech Challenge Authentication'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    Description: The environment (dev, qa, prod)
+    AllowedValues:
+      - dev
+      - qa
+      - production
+  
+  SecretKey:
+    Type: String
+    Description: Secret key for JWT token signing
+    NoEcho: true
+  
+  CustomerApiUrl:
+    Type: String
+    Description: URL for the Customer API
+
+Resources:
+  # API Gateway
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Environment
+      EndpointConfiguration: REGIONAL
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+      Auth:
+        DefaultAuthorizer: JwtAuthorizer
+        Authorizers:
+          JwtAuthorizer:
+            FunctionArn: !GetAtt AuthorizerFunction.Arn
+            Identity:
+              Header: Authorization
+              ValidationExpression: '^Bearer [-0-9a-zA-Z\._]*$'
+          
+  # Lambda Function for CPF Authentication
+  AuthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src
+      Handler: auth_function.lambda_handler
+      Runtime: python3.9
+      Timeout: 30
+      MemorySize: 128
+      Environment:
+        Variables:
+          CUSTOMER_API_URL: !Ref CustomerApiUrl
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /auth
+            Method: post
+            Auth:
+              Authorizer: NONE
+  
+  # Lambda Authorizer Function
+  AuthorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src
+      Handler: authorizer_function.lambda_handler
+      Runtime: python3.9
+      Timeout: 30
+      MemorySize: 128
+      Environment:
+        Variables:
+          SECRET_KEY: !Ref SecretKey
+
+Outputs:
+  ApiEndpoint:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
+  
+  AuthFunctionArn:
+    Description: "Auth Function ARN"
+    Value: !GetAtt AuthFunction.Arn
+  
+  AuthorizerFunctionArn:
+    Description: "Authorizer Function ARN"
+    Value: !GetAtt AuthorizerFunction.Arn 
