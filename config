@@ -5,6 +5,6 @@
 	ignorecase = true
 	precomposeunicode = true
 [remote "origin"]
-	url = https://github.com/rtician/fiap-tech-challenge.git
+	url = https://github.com/gabrielmatosms/fiap-tech-challenge.git
 	fetch = +refs/*:refs/*
 	mirror = true
